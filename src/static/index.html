@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LabReserve - Gestión Inteligente de Laboratorios | SDD Spec Kit</title>
+  <meta name="description" content="Sistema de Gestión y Reserva de Puestos de Cómputo Universitario con flujo Spec-Driven Development (SDD) y autenticación JWT.">
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <!-- Background Glow Accents -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <!-- Header & Navigation -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+            <path d="M6 6h10"/>
+            <path d="M6 10h10"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">LabReserve</span>
+          <span class="badge-sdd">Spec Kit • JWT & RBAC</span>
+        </div>
+      </div>
+
+        <!-- Real-time SSE Live Indicator -->
+        <div id="sse-indicator" class="sse-pill sse-connecting" title="Conexión en tiempo real activa">
+          <span class="sse-dot"></span>
+          <span id="sse-status-text">Conectando...</span>
+        </div>
+
+        <!-- User Session Bar -->
+        <div id="session-container" class="session-container">
+          <button id="btn-open-login" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+              <polyline points="10 17 15 12 10 7"/>
+              <line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+            Iniciar Sesión
+          </button>
+          
+          <div id="user-profile-badge" class="user-badge hidden">
+            <div class="user-avatar" id="user-avatar">U</div>
+            <div class="user-info">
+              <span class="user-name" id="user-display-name">Usuario</span>
+              <span class="role-pill role-student" id="user-display-role">ESTUDIANTE</span>
+            </div>
+            <button id="btn-logout" class="btn-logout" title="Cerrar sesión">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button id="btn-seed-data" class="btn btn-outline" title="Cargar laboratorios, puestos y usuarios demo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            <path d="m9 11 3 3L22 4"/>
+          </svg>
+          Sembrar Demo
+        </button>
+        <a href="/docs" target="_blank" class="btn btn-ghost" title="Ver documentación OpenAPI Swagger">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          API Docs
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-layout">
+    <!-- Hero / Control Banner -->
+    <section class="control-panel glass-card">
+      <div class="panel-header">
+        <div>
+          <h1 class="panel-title">Reserva de Puestos de Cómputo</h1>
+          <p class="panel-subtitle">Consulta de disponibilidad en tiempo real con reserva en 1 clic e inicio de sesión seguro.</p>
+        </div>
+        <div class="view-switch">
+          <button id="tab-grid" class="tab-btn active">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"/>
+              <rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Mapa de Puestos
+          </button>
+          <!-- Dynamic tab: changes name and behavior based on role -->
+          <button id="tab-user-view" class="tab-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span id="tab-user-view-text">Mis Reservas</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters & Time Slot Config -->
+      <form id="filter-form" class="filter-grid">
+        <div class="form-group">
+          <label for="select-lab">Laboratorio</label>
+          <div class="select-wrapper">
+            <select id="select-lab" required>
+              <option value="" disabled selected>Cargando laboratorios...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="input-date">Fecha</label>
+          <input type="date" id="input-date" required>
+        </div>
+
+        <div class="form-group">
+          <label for="input-start-time">Hora de Inicio</label>
+          <input type="time" id="input-start-time" value="10:00" step="1800" required>
+        </div>
+
+        <div class="form-group">
+          <label for="input-end-time">Hora de Fin (Máx. 2h)</label>
+          <input type="time" id="input-end-time" value="12:00" step="1800" required>
+        </div>
+
+        <div class="form-group form-actions">
+          <button type="submit" id="btn-check-availability" class="btn btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+            Consultar Disponibilidad
+          </button>
+        </div>
+      </form>
+
+      <!-- Live Availability Stats Bar -->
+      <div id="stats-bar" class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-label">Capacidad Total</span>
+          <span class="stat-value" id="stat-total">-</span>
+        </div>
+        <div class="stat-item stat-available">
+          <span class="stat-label">Disponibles</span>
+          <span class="stat-value" id="stat-available">-</span>
+        </div>
+        <div class="stat-item stat-occupied">
+          <span class="stat-label">Ocupados</span>
+          <span class="stat-value" id="stat-occupied">-</span>
+        </div>
+        <div class="stat-item stat-maintenance">
+          <span class="stat-label">Mantenimiento</span>
+          <span class="stat-value" id="stat-maintenance">0</span>
+        </div>
+        <div class="stat-item stat-window">
+          <span class="stat-label">Ventana Seleccionada</span>
+          <span class="stat-value text-sm" id="stat-window">10:00 - 12:00 (2 hrs)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 1: Workstations Grid View -->
+    <section id="section-grid" class="content-section">
+      <div class="section-header">
+        <h2 class="section-title">Estaciones de Trabajo</h2>
+        <div class="legend">
+          <span class="legend-item"><span class="dot dot-available"></span> Libre</span>
+          <span class="legend-item"><span class="dot dot-occupied"></span> Ocupado</span>
+          <span class="legend-item"><span class="dot dot-maintenance"></span> Mantenimiento</span>
+        </div>
+      </div>
+
+      <!-- Workstations Grid -->
+      <div id="workstations-grid" class="workstations-grid">
+        <div class="empty-state">
+          <p>Haz clic en <strong>"Consultar Disponibilidad"</strong> o carga los <strong>"Datos Demo"</strong> para ver los puestos.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Student "Mis Reservas" View -->
+    <section id="section-my-reservations" class="content-section hidden">
+      <div class="glass-card manage-card">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Mis Reservas Activas</h2>
+            <p class="manage-desc">Listado automático sincronizado con tu cuenta mediante token JWT.</p>
+          </div>
+          <button id="btn-refresh-my-reservations" class="btn btn-outline" title="Actualizar lista">
+            ↻ Refrescar
+          </button>
+        </div>
+
+        <div id="my-reservations-list" class="reservations-stack">
+          <div class="empty-state">
+            <p>Inicia sesión como estudiante para ver tus turnos asignados.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Admin Dashboard View -->
+    <section id="section-admin-dashboard" class="content-section hidden">
+      <div class="glass-card manage-card admin-dashboard-card">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Panel de Supervisión del Laboratorio (ADMIN)</h2>
+            <p class="manage-desc">Vista administrativa de todas las reservas de la jornada y control de mantenimiento de puestos.</p>
+          </div>
+          <button id="btn-refresh-admin-reservations" class="btn btn-outline">
+            ↻ Actualizar Todo
+          </button>
+        </div>
+
+        <h3 class="subsection-title">Todas las Reservas Registradas</h3>
+        <div id="admin-reservations-list" class="reservations-stack">
+          <div class="empty-state">
+            <p>Cargando reservas globales del sistema...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal 1: Login Form with Quick Demo Access -->
+  <div id="modal-login" class="modal-backdrop hidden">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Acceso al Sistema</h3>
+          <p class="modal-subtitle">Inicia sesión para reservar en 1 clic y gestionar tus turnos.</p>
+        </div>
+        <button id="modal-login-close" class="btn-icon" aria-label="Cerrar modal">&times;</button>
+      </div>
+
+      <!-- Quick Demo Access Buttons -->
+      <div class="demo-login-box">
+        <span class="demo-box-label">Accesos Rápidos de Demostración:</span>
+        <div class="demo-buttons">
+          <button type="button" id="btn-quick-student" class="btn btn-outline quick-login-btn">
+            🎓 Estudiante Demo
+            <small>Código: 20240981</small>
+          </button>
+          <button type="button" id="btn-quick-admin" class="btn btn-outline quick-login-btn">
+            🛡️ Encargado Lab (Admin)
+            <small>ID: ADMIN-01</small>
+          </button>
+        </div>
+      </div>
+
+      <div class="divider"><span>o ingresa con tu cuenta</span></div>
+
+      <form id="form-login" class="modal-form">
+        <div class="form-group">
+          <label for="input-login-username">Usuario / Código de Estudiante</label>
+          <input type="text" id="input-login-username" placeholder="Ej. 20240981 o ADMIN-01" required>
+        </div>
+
+        <div class="form-group">
+          <label for="input-login-password">Contraseña</label>
+          <input type="password" id="input-login-password" placeholder="••••••••" required>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="modal-login-cancel" class="btn btn-ghost">Cancelar</button>
+          <button type="submit" id="btn-submit-login" class="btn btn-primary">Iniciar Sesión</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: 1-Click Booking Form -->
+  <div id="modal-booking" class="modal-backdrop hidden">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Confirmar Reserva de Puesto</h3>
+          <p id="modal-station-info" class="modal-subtitle">Estación WS-01 • Laboratorio IA</p>
+        </div>
+        <button id="modal-close" class="btn-icon" aria-label="Cerrar modal">&times;</button>
+      </div>
+
+      <form id="form-booking" class="modal-form">
+        <input type="hidden" id="booking-workstation-id">
+        <input type="hidden" id="booking-start-time">
+        <input type="hidden" id="booking-end-time">
+
+        <div class="booking-summary-box">
+          <div class="summary-row">
+            <span>Horario:</span>
+            <strong id="summary-times">10:00 - 12:00</strong>
+          </div>
+          <div class="summary-row">
+            <span>Duración:</span>
+            <strong id="summary-duration">2 horas</strong>
+          </div>
+        </div>
+
+        <!-- Identity verified box (1-Click Booking) -->
+        <div id="booking-auth-box" class="verified-identity-card">
+          <div class="verified-icon">✓</div>
+          <div>
+            <div class="verified-title" id="booking-user-name">Carlos Mendoza</div>
+            <div class="verified-subtitle" id="booking-user-details">Código: 20240981 • estudiante@unsa.edu.pe</div>
+            <span class="verified-note">Inferencia automática de identidad por token JWT.</span>
+          </div>
+        </div>
+
+        <!-- Fallback if unauthenticated -->
+        <div id="booking-unauth-box" class="unauth-warning hidden">
+          <p>⚠️ No has iniciado sesión. Inicia sesión para registrar tu reserva en 1 clic.</p>
+          <button type="button" id="btn-login-from-modal" class="btn btn-outline" style="margin-top:0.5rem; width:100%;">
+            Iniciar Sesión Ahora
+          </button>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="modal-cancel-btn" class="btn btn-ghost">Cerrar</button>
+          <button type="submit" id="btn-submit-booking" class="btn btn-accent">Confirmar Reserva (1 Clic)</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
